@@ -5,6 +5,8 @@ from django.utils.html import format_html
 # Register your models here.
 from .models import Post, Category, Tag
 from .adminforms import PostAdminForm
+from typeidea.custom_site import custom_site
+from typeidea.base_admin import BaseOwnerAdmin
 
 
 class CategoryOwnerFilter(admin.SimpleListFilter):
@@ -23,8 +25,18 @@ class CategoryOwnerFilter(admin.SimpleListFilter):
         return queryset
 
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class PostInline(admin.TabularInline):
+    """关联模型编辑"""
+    fields = ('title', 'desc')
+    extra = 1
+    model = Post
+
+
+@admin.register(Category, site=custom_site)
+class CategoryAdmin(BaseOwnerAdmin):
+    # 关联模型编辑
+    inlines = [PostInline, ]
+
     # 展示列表
     list_display = ('name', 'status', 'is_nav', 'owner', 'post_count', 'created_time')
 
@@ -35,27 +47,17 @@ class CategoryAdmin(admin.ModelAdmin):
     list_filter = ['name', ]
     search_fields = ['name', ]
 
-    def __str__(self):
-        return self.name
-
-    def save_model(self, request, obj, form, change):
-        # 自动保存为当前登录作者
-        obj.owner = request.user
-        return super(CategoryAdmin, self).save_model(request, obj, form, change)
-
-    def get_queryset(self, request):
-        # 展示列表筛选 -- 只展示当前用户分类
-        qs = super(CategoryAdmin, self).get_queryset(request)
-        return qs.filter(owner=request.user)
-
     def post_count(self, obj):
         return obj.post_set.count()
 
     post_count.short_description = '文章数量'
 
+    def __str__(self):
+        return self.name
 
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+
+@admin.register(Tag, site=custom_site)
+class TagAdmin(BaseOwnerAdmin):
     list_display = ('name', 'status', 'owner', 'created_time')
 
     fields = ('name', 'status')
@@ -64,21 +66,12 @@ class TagAdmin(admin.ModelAdmin):
     list_filter = ['name', ]
     search_fields = ['name', ]
 
-    def save_model(self, request, obj, form, change):
-        obj.owner = request.user
-        return super(TagAdmin, self).save_model(request, obj, form, change)
-
-    def get_queryset(self, request):
-        # 展示列表筛选 -- 只展示当前用户标签
-        qs = super(TagAdmin, self).get_queryset(request)
-        return qs.filter(owner=request.user)
-
     def __str__(self):
         return self.name
 
 
-@admin.register(Post)
-class PostAdmin(admin.ModelAdmin):
+@admin.register(Post, site=custom_site)
+class PostAdmin(BaseOwnerAdmin):
     # 展示页面
     list_display = [
         'title', 'category', 'status', 'owner', 'created_time', 'operator'
@@ -126,19 +119,10 @@ class PostAdmin(admin.ModelAdmin):
     def operator(self, obj):
         return format_html(
             '<a href="{}">编辑</a>',
-            reverse('admin:blog_post_change', args=(obj.id,))
+            reverse('cus_admin:blog_post_change', args=(obj.id,))
         )
 
     operator.short_description = '操作'
-
-    def save_model(self, request, obj, form, change):
-        obj.owner = request.user
-        return super(PostAdmin, self).save_model(request, obj, form, change)
-
-    def get_queryset(self, request):
-        # 展示列表筛选 -- 只展示当前用户文章
-        qs = super(PostAdmin, self).get_queryset(request)
-        return qs.filter(owner=request.user)
 
     def __str__(self):
         return self.title
