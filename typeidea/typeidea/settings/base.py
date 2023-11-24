@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # print(BASE_DIR)
@@ -30,6 +32,7 @@ ALLOWED_HOSTS = []
 
 
 INSTALLED_APPS = [
+    'typeidea',
     'blog.apps.BlogConfig',
     'comment.apps.CommentConfig',
     'config.apps.ConfigConfig',
@@ -57,7 +60,7 @@ ROOT_URLCONF = 'typeidea.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, "typeidea/templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
